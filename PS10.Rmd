@@ -78,8 +78,9 @@ ggplot(data = train, aes(log(train$price_doc))) + geom_histogram() + xlab("Log S
 LASSO_CV <- cv.glmnet(x=predictor_matrix_train, y=train_subset$log_price_doc, alpha=1)
 #Set optimal lambda
 lambda_star_1SE <- LASSO_CV$lambda.1se
+LASSO_fit <- glmnet(x=predictor_matrix_train, y=train_subset$log_price_doc, alpha=1)
 #Making predictions
-y_hat_log <- predict(LASSO_CV, newx=predictor_matrix_test, s=lambda_star_1SE) 
+y_hat_log <- predict(LASSO_fit, newx=predictor_matrix_test, s=lambda_star_1SE) 
 #Sanity check: Does the distribution of predictions match the distribution in the training data?
 ggplot() + aes(y_hat_log) + geom_histogram()
 #Looks at least reasonable, so pressing forward with this set of predictions
@@ -102,17 +103,17 @@ write_csv(submission, "submission.csv")
 
 ```{r}
 #Predictions from LASSO on the training data
-y_hat_train <- predict(LASSO_CV, newx=predictor_matrix_train, s=lambda_star_1SE)
+y_hat_train <- predict(LASSO_fit, newx=predictor_matrix_train, s=lambda_star_1SE)
 lasso_rmsle <- RMSLE(exp(y_hat_train), train_subset$price_doc)
 lasso_rmsle
 
 #Predictions from lm on the training data
-lm_train <- predict(LASSO_CV, newx=predictor_matrix_train, s = 0)
+lm_train <- predict(LASSO_fit, newx=predictor_matrix_train, s = 0)
 lm_rmsle <- RMSLE(exp(lm_train), train_subset$price_doc)
 lm_rmsle
 
 #Making a submission file for lm
-lm_y_hat_log <- predict(LASSO_CV, newx=predictor_matrix_test, s=0)
+lm_y_hat_log <- predict(LASSO_fit, newx=predictor_matrix_test, s=0)
 #Convert back to original units
 lm_y_hat <- exp(lm_y_hat_log)
 
@@ -133,4 +134,4 @@ in these cells:
 Method                | Training Score  | Kaggle Score
 --------------------- | -------------   | -------------
 lm                    |  0.2791267      | 0.90662 
-LASSO crossvalidated  |  0.5477483      | 0.45879
+LASSO crossvalidated  |  0.5738539      | 0.49069
